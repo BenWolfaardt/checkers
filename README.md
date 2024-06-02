@@ -32,3 +32,15 @@ docker exec -it checkers checkersd query --help
 docker exec -it checkers bash -c "cd vue && npm install"
 docker exec -it checkers bash -c "cd vue && npm run dev -- --host"
 ```
+
+- Add counter to store in the blockchain
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold single systemInfo nextId:uint \
+    --module checkers \
+    --no-message
+```

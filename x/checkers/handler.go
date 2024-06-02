@@ -3,9 +3,9 @@ package checkers
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/BenWolfaardt/checkers/x/checkers/keeper"
 	"github.com/BenWolfaardt/checkers/x/checkers/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 

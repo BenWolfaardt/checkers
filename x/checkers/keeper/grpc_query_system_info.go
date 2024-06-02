@@ -9,11 +9,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+func (k Keeper) SystemInfo(c context.Context, req *types.QueryGetSystemInfoRequest) (*types.QueryGetSystemInfoResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 	ctx := sdk.UnwrapSDKContext(c)
 
-	return &types.QueryParamsResponse{Params: k.GetParams(ctx)}, nil
+	val, found := k.GetSystemInfo(ctx)
+	if !found {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+
+	return &types.QueryGetSystemInfoResponse{SystemInfo: val}, nil
 }
