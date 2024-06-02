@@ -44,3 +44,16 @@ docker run --rm -it \
     --module checkers \
     --no-message
 ```
+
+- Scaffold map using the StoredGame name
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold map storedGame board turn black red \
+    --index index \
+    --module checkers \
+    --no-message
+```
