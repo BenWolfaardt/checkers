@@ -24,6 +24,10 @@ RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-$BUILDARCH.tar.gz | tar -C $
 # Install ignite
 RUN curl -L https://get.ignite.com/cli@v${IGNITE_VERSION}! | bash
 
+# Install Node
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION} | bash -
+RUN apt-get install -y nodejs
+
 RUN apt-get clean
 
 EXPOSE 1317 3000 4500 5000 26657
