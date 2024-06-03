@@ -87,3 +87,26 @@ docker run --rm -it \
     checkers_i \
     go test github.com/BenWolfaardt/checkers/x/checkers/types
 ```
+
+- Start and reset the chain
+
+```bash
+docker run --rm -it \
+    --name checkers \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite chain serve --reset-once
+```
+
+- Query the CLI
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers --help
+```
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+```
