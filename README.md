@@ -132,3 +132,84 @@ docker exec -it checkers \
 docker exec -it checkers \
     checkersd tx checkers --help
 ```
+
+- Create custom messages
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold message createGame black red \
+    --module checkers \
+    --response gameIndex
+```
+
+- Run tests on new test
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test github.com/alice/checkers/x/checkers/keeper
+```
+
+- Interact with the CLI
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers --help
+```
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game --help
+```
+
+- Export Alice and Bob's addresses
+
+```bash
+export alice=$(docker exec checkers checkersd keys show alice -a)
+export bob=$(docker exec checkers checkersd keys show bob -a)
+```
+
+- How much gas is needed?
+  - Note this isn't working yet.
+
+```bash
+ docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice --dry-run
+```
+
+- Keep gas set to auto
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice --gas auto
+```
+
+- If you are curious, the .events.attributes are encoded in Base64:
+
+```bash
+docker exec -it checkers \
+    bash -c "echo YWN0aW9u | base64 -d"
+> action%   
+docker exec -it checkers \
+    bash -c "echo Y3JlYXRlX2dhbWU= | base64 -d"
+> create_game%   
+```
+
+- Check to see if anything changed
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+```
+
+- Check whether any game was created:
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers list-stored-game
+```
