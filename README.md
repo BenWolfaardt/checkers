@@ -57,3 +57,33 @@ docker run --rm -it \
     --module checkers \
     --no-message
 ```
+
+- Update the types/genesis/go automatically after updating the genesis.proto
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```
+
+- Run the generated tests
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test github.com/BenWolfaardt/checkers/x/checkers/keeper
+```
+
+- Run the test we added
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test github.com/BenWolfaardt/checkers/x/checkers/types
+```
