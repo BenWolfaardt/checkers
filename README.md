@@ -110,3 +110,25 @@ docker exec -it checkers \
 docker exec -it checkers \
     checkersd query checkers show-system-info
 ```
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info --help
+```
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info --output json
+```
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers list-stored-game
+```
+
+> Remember how you wrote --no-message? That was to not create messages or transactions, which would directly update your checkers storage. Soft-confirm there are no commands available:
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers --help
+```
