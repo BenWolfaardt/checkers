@@ -182,6 +182,8 @@ export bob=$(docker exec checkers checkersd keys show bob -a)
     checkersd tx checkers create-game $alice $bob --from $alice --dry-run
 ```
 
+> `--from`: Name or address of private key with which to sign
+
 - Keep gas set to auto
 
 ```bash
@@ -212,4 +214,41 @@ docker exec -it checkers \
 ```bash
 docker exec -it checkers \
     checkersd query checkers list-stored-game
+```
+
+### Create and Save a Game Properly
+
+- Create a game
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice --gas auto
+```
+
+- Show system info
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+```
+
+- List all stored games
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers list-stored-game
+```
+
+- Show the new game alone:
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+```
+
+- Pretty formatted checkers board
+
+```bash
+docker exec -it checkers \
+    bash -c "checkersd query checkers show-stored-game 1 --output json | jq \".storedGame.board\" | sed 's/\"//g' | sed 's/|/\n/g'"
 ```
