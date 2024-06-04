@@ -252,3 +252,87 @@ docker exec -it checkers \
 docker exec -it checkers \
     bash -c "checkersd query checkers show-stored-game 1 --output json | jq \".storedGame.board\" | sed 's/\"//g' | sed 's/|/\n/g'"
 ```
+
+### Add a Way to Make a Move
+
+- Ignite command
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold message playMove gameIndex fromX:uint fromY:uint toX:uint toY:uint \
+    --module checkers \
+    --response capturedX:int,capturedY:int,winner
+```
+
+- Start chain
+
+```bash
+docker exec -it checkers ignite chain serve
+```
+
+- Bob plays out of turn
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move --help
+```
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 0 5 1 4 --from $bob
+    #                               ^ ^ ^ ^ ^
+    #                               | | | | To Y
+    #                               | | | To X
+    #                               | | From Y
+    #                               | From X
+    #                               Game id
+```
+
+- Query txhas
+
+```bash
+docker exec -it checkers \
+    checkersd query tx <txhas>
+```
+
+- Alice plays wrong move by taking a piece on the side and moving it just outside the board:
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 7 2 8 3 --from $alice
+```
+
+> `Error: toX out of range (8): position index is invalid` - The transaction never went into the mem pool. This mistake did not cost Alice any gas.
+
+- Alice tries to move to an occupied place
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 0 0 1 --from $alice
+```
+
+- Alice plays correctly
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+```
+
+- Confirm the move visually
+
+```bash
+docker exec -it checkers \
+    bash -c "checkersd query checkers show-stored-game 1 --output json | jq \".storedGame.board\" | sed 's/\"//g' | sed 's/|/\n/g'"
+
+    # *b*b*b*b
+    # b*b*b*b*
+    # ***b*b*b
+    # **b*****     <--- Here
+    # ********
+    # r*r*r*r*
+    # *r*r*r*r
+    # r*r*r*r*
+```
