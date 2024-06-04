@@ -22,7 +22,7 @@ RUN apt-get install -y $PACKAGES
 RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-$BUILDARCH.tar.gz | tar -C $LOCAL -xzf -
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.20.2 \
-    && go install golang.org/x/tools/gopls@v0.14.2 \
+    && go install golang.org/x/tools/gopls@v0.15.3 \
     && go install github.com/haya14busa/goplay/cmd/goplay@v1.0.0 \
     && go install github.com/josharian/impl@latest \
     && go install github.com/fatih/gomodifytags@latest \
