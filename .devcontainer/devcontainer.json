@@ -1,0 +1,23 @@
+{
+	"name": "Go",
+	"build": {
+        "dockerfile": "../Dockerfile"
+    },
+
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"golang.go"
+			]
+		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git": {
+			"version": "latest"
+		}
+	},
+
+	"forwardPorts": [1317, 3000, 4500, 5000, 26657],
+	"postCreateCommand": "go version"
+}
