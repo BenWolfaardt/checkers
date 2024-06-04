@@ -402,3 +402,56 @@ docker exec -it checkers \
     # *r*r*r*r
     # r*r*r*r*
 ```
+
+### Record the Game Winner
+
+- Ignite command
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```
+
+- Reset the chain as we have updated the default value of winner from `.Winner == ""` to `rules.PieceStrings[rules.NO_PLAYER]`.
+
+```bash
+docker run --rm -it \
+    --name checkers \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite chain serve --reset-once
+```
+
+- Confirm there is no winner for a newly created game
+
+> Note: need to re `export` Bob and Alice
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice
+
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # ...
+    #   winner: '*'
+    # ...
+```
+
+- Confirm there is no winner after first move
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # ...
+    #   winner: '*'
+    # ...
+```
