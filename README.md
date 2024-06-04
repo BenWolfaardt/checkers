@@ -172,6 +172,9 @@ docker exec -it checkers \
 ```bash
 export alice=$(docker exec checkers checkersd keys show alice -a)
 export bob=$(docker exec checkers checkersd keys show bob -a)
+
+export alice=$(checkersd keys show alice -a)
+export bob=$(checkersd keys show bob -a)
 ```
 
 - How much gas is needed?
@@ -220,6 +223,8 @@ docker exec -it checkers \
 
 - Create a game
 
+> Initiate game
+
 ```bash
 docker exec -it checkers \
     checkersd tx checkers create-game $alice $bob --from $alice --gas auto
@@ -247,6 +252,8 @@ docker exec -it checkers \
 ```
 
 - Pretty formatted checkers board
+
+> View checkers board
 
 ```bash
 docker exec -it checkers \
@@ -316,12 +323,16 @@ docker exec -it checkers \
 
 - Alice plays correctly
 
+> Next move, Alice's first turn
+
 ```bash
 docker exec -it checkers \
     checkersd tx checkers play-move 1 1 2 2 3 --from $alice
 ```
 
 - Confirm the move visually
+
+> See updated board
 
 ```bash
 docker exec -it checkers \
@@ -333,6 +344,61 @@ docker exec -it checkers \
     # **b*****     <--- Here
     # ********
     # r*r*r*r*
+    # *r*r*r*r
+    # r*r*r*r*
+```
+
+### Emit Game Information
+
+> Bob's turn
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 0 5 1 4 --from $bob
+```
+
+- View event data better
+
+```bash
+docker exec -it checkers \
+    checkersd query tx <txhash>
+```
+
+- Bob's pawn is now ready to be captured by Alice
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1 --output json | jq ".storedGame.board" | sed 's/"//g' | sed 's/|/\n/g'
+
+    # *b*b*b*b
+    # b*b*b*b*
+    # ***b*b*b
+    # **b*****
+    # *r******    <-- Ready to be captured
+    # **r*r*r*
+    # *r*r*r*r
+    # r*r*r*r*
+```
+
+> The rules of the game included in this project mandate that the player captures a piece when possible.
+
+- Alice captures the piece
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 2 3 0 5 --from $alice
+```
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1 --output json | jq ".storedGame.board" | sed 's/"//g' | sed 's/|/\n/g'
+
+    # *b*b*b*b
+    # b*b*b*b*
+    # ***b*b*b
+    # ********
+    # ********
+    # b*r*r*r*
     # *r*r*r*r
     # r*r*r*r*
 ```
