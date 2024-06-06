@@ -1,6 +1,10 @@
 # Checkers
 
-## Docker Commands
+## Tutorial / Commands
+
+### Rebuild Your Cosmos Chain With Ignite
+
+#### Ignite CLI
 
 - `docker build . -t checkers_i`
 - `docker run --rm -it checkers_i ignite version`
@@ -32,6 +36,8 @@ docker exec -it checkers checkersd query --help
 docker exec -it checkers bash -c "cd vue && npm install"
 docker exec -it checkers bash -c "cd vue && npm run dev -- --host"
 ```
+
+#### Store Object
 
 - Add counter to store in the blockchain
 
@@ -77,6 +83,8 @@ docker run --rm -it \
     checkers_i \
     go test github.com/BenWolfaardt/checkers/x/checkers/keeper
 ```
+
+#### Create and Save a Game Properly
 
 - Run the test we added
 
@@ -132,6 +140,8 @@ docker exec -it checkers \
 docker exec -it checkers \
     checkersd tx checkers --help
 ```
+
+#### Create Custom Messages
 
 - Create custom messages
 
@@ -260,7 +270,7 @@ docker exec -it checkers \
     bash -c "checkersd query checkers show-stored-game 1 --output json | jq \".storedGame.board\" | sed 's/\"//g' | sed 's/|/\n/g'"
 ```
 
-### Add a Way to Make a Move
+#### Add a Way to Make a Move
 
 - Ignite command
 
@@ -348,7 +358,7 @@ docker exec -it checkers \
     # r*r*r*r*
 ```
 
-### Emit Game Information
+#### Emit Game Information
 
 > Bob's turn
 
@@ -403,7 +413,7 @@ docker exec -it checkers \
     # r*r*r*r*
 ```
 
-### Record the Game Winner
+#### Record the Game Winner
 
 - Ignite command
 
@@ -455,3 +465,82 @@ docker exec -it checkers \
     #   winner: '*'
     # ...
 ```
+
+### Continue Developing Your Chain
+
+#### Keep an Up-To-Date Game Deadline
+
+- Update the proto after adding `deadline` to StoredGame
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```
+
+- Confirm the project still compiles
+
+```bash
+docker run --rm -it \
+    --name checkers \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite chain build
+```
+
+- Test to see new field
+
+> If you still have state in your blockchain a migration will be necessary (we learn about that later)
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+```
+
+- Try making a new move to observe state
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+```
+
+- Observe new move's `storedGame`
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+```
+
+- Or you could restart your blockchain deleting state
+
+```bash
+docker exec -it checkers ignite chain serve --reset-once
+```
+
+- Start a new game
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice
+```
+
+- Start a new game
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # storedGame:
+    # black: cosmos1ujnssfn87l4zu0m6f2dvrnn5t270gc3nftvml2
+    # board: '*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*'
+    # deadline: 2024-06-07 14:27:40.235468194 +0000 UTC             <------ New field
+    # index: "1"
+    # red: cosmos1hpks8k8azlwdja9xnhw56gtrcpcdm4l0pnc9gq
+    # turn: b
+    # winner: '*'
+```
+
+> Observe the new `deadline` field in the `storedGame` output
