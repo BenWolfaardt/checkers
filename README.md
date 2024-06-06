@@ -544,3 +544,49 @@ docker exec -it checkers \
 ```
 
 > Observe the new `deadline` field in the `storedGame` output
+
+### Keep Track Of How Many Moves Have Been Played
+
+- Add `moveCount` to `stored_game.proto` and update proto definition
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```
+
+- View newly added field in `storedGame`
+
+> If your blockchain state already contains games then they are missing the new field they'll thus get the default value `0`:
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # moveCount: "0"
+```
+
+> Our blockchain state is technically broken, hence a migration being necessary, something we will learn about later.
+
+- Reset chain and create new game to test functionality of `moveCount`
+
+```bash
+docker exec -it checkers ignite chain serve --reset-once
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # moveCount: "1"
+```
+
+## Notes
+
+- Sometimes full docker use other times quick exec
+- Oftentimes bob and alice need to be exported when reseting chain
+- Dev container means you can do all locally
+- Can't run checkersd commands with spaces in front or you get: `Error: rpc error: code = NotFound desc = rpc error: code = NotFound desc = not found: key not found`

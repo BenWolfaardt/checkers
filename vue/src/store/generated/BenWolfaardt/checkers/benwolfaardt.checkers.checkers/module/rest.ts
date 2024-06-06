@@ -66,6 +66,9 @@ export interface CheckerscheckersStoredGame {
   red?: string;
   winner?: string;
   deadline?: string;
+
+  /** @format uint64 */
+  moveCount?: string;
 }
 
 export interface CheckerscheckersSystemInfo {
