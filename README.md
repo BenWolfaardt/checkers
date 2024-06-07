@@ -775,6 +775,67 @@ docker exec -it checkers \
         # nextId: "4"
 ```
 
+#### Let Players Set a Wager
+
+- Update the protobuf after the addition of `wager` to `StoredGame` and `MsgCreateGame`
+
+```bash
+docker run --rm -it \
+    ignite generate proto-go
+```
+
+- Reset and restart chain
+
+```bash
+docker exec -it checkers \
+    ignite chain server --reset-once
+```
+
+- Check initial balances
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+docker exec -it checkers \
+    checkersd query bank balances $bob
+
+    # balances:
+    # - amount: "100000000"
+        # denom: stake
+    # - amount: "20000"
+        # denom: token
+    # pagination:
+        # next_key: null
+        # total: "0"
+
+    # balances:
+    # - amount: "100000000"
+        # denom: stake
+    # - amount: "10000"
+        # denom: token
+    # pagination:
+        # next_key: null
+        # total: "0"
+```
+
+- Create a game with a wager
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob 1000000 --from $alice
+```
+
+- Was the game stored correctly?
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # storedGame:
+    #   ...
+    #   wager: "1000000"
+```
+
 - 
 
 ```bash
