@@ -545,7 +545,7 @@ docker exec -it checkers \
 
 > Observe the new `deadline` field in the `storedGame` output
 
-### Keep Track Of How Many Moves Have Been Played
+#### Keep Track Of How Many Moves Have Been Played
 
 - Add `moveCount` to `stored_game.proto` and update proto definition
 
@@ -583,6 +583,141 @@ docker exec -it checkers \
 
     # moveCount: "1"
 ```
+
+#### Put Your Games in Order
+
+- Update protobuf files are FIFO additonal info added to them.
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```
+
+- Run updated tests
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test github.com/alice/checkers/x/checkers/keeper
+```
+
+- Reset and restart chain
+
+```bash
+docker exec -it checkers \
+    ignite chain serve --reset-once
+```
+
+- Is the genesis FIFO information correctly saved?
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+
+    # SystemInfo:
+    #   fifoHeadIndex: "-1"
+    #   fifoTailIndex: "-1"
+    #   nextId: "1"
+```
+
+- If you create a game, is the game as expected?
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $bob
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+    
+    # SystemInfo:
+    #   fifoHeadIndex: "1"
+    #   fifoTailIndex: "1"
+    #   nextId: "2"
+```
+
+- What about the information saved in the game?
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # storedGame:
+    #   afterIndex: "-1"
+    #   beforeIndex: "-1"
+```
+
+- And if you create another game?
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $bob
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+
+    # SystemInfo:
+    #   fifoHeadIndex: "1"
+    #   fifoTailIndex: "2"
+    #   nextId: "3"
+```
+
+- Did the games also store the correct values? For the first game:
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 1
+
+    # afterIndex: "2" # The second game you created
+    # beforeIndex: "-1" # No game
+```
+
+- For the second game:
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 2
+
+    # afterIndex: "-1" # No game
+    # beforeIndex: "1" # The first game you created
+```
+
+> The FIFO in effect has the game IDs [1, 2]. 
+
+- Add a third game, and confirm that your FIFO is [1, 2, 3].
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $bob
+$ docker exec -it checkers \
+    checkersd query checkers show-system-info
+```
+
+- What happens if Alice plays a move in game 2, the game in the middle?
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 2 1 2 2 3 --from $alice
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+```
+
+- Is game 3 in the middle now?
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-stored-game 3
+```
+
+- 
+
+```bash
+
+```
+
+
 
 ## Notes
 
