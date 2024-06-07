@@ -968,6 +968,23 @@ docker exec -it checkers \
     # ...
 ```
 
+#### Integration Tests
+
+- Add integration tests
+
+```bash
+docker exec -it checkers \
+    go test github.com/BenWolfaardt/checkers/tests/integration/checker
+s/keeper
+```
+    
+- 
+
+```bash
+
+```
+    
+
 
 ## Notes
 
