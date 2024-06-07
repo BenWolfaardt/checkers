@@ -711,12 +711,75 @@ docker exec -it checkers \
     checkersd query checkers show-stored-game 3
 ```
 
+#### Auto-Expiring Games
+
+- Reset and restart the chain
+
+```bash
+docker exec -it checkers ignite chain serve --reset-once
+```
+
+> Export your aliases again
+
+- Create three games one minute apart. Have Alice play the middle one, and both Alice and Bob play the last one:
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice```
+
+> Wait one minute
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $bob
+docker exec -it checkers \
+    checkersd tx checkers play-move 2 1 2 2 3 --from $alice
+```
+
+> Wait another minute
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob --from $alice
+docker exec -it checkers \
+    checkersd tx checkers play-move 3 1 2 2 3 --from $alice
+docker exec -it checkers \
+    checkersd tx checkers play-move 3 0 5 1 4 --from $bob
+```
+
+- With three games in, confirm that you see them all
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers list-stored-game
+```
+
+- List them again after two, three, four, and five minutes. You should see games 1 and 2 disappear, and game 3 being forfeited by Alice, i.e. red Bob wins:
+
+```bash
+docker exec -it checkers \
+    bash -c "checkersd query checkers show-stored-game 3 --output json | jq '.storedGame.winner'"
+
+    # "r"
+```
+
+- Confirm that the FIFO no longer references the removed games nor the forfeited game
+
+```bash
+docker exec -it checkers \
+    checkersd query checkers show-system-info
+
+    # SystemInfo:
+        # fifoHeadIndex: "-1"
+        # fifoTailIndex: "-1"
+        # nextId: "4"
+```
+
 - 
 
 ```bash
 
 ```
-
 
 
 ## Notes
