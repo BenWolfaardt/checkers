@@ -836,10 +836,136 @@ docker exec -it checkers \
     #   wager: "1000000"
 ```
 
-- 
+#### Handle Wager Payments
+
+- Restart chain
+
+
+// TODO confirm if you get errors?
 
 ```bash
+docker exec -it checkers \
+    ignite chain serve --reset-once
+```
 
+- Update your `Dockerfile` with the addition of `gomock` and `make`
+
+- Prepare mocks
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    mockgen \
+    -source=x/checkers/types/expected_keepers.go \
+    -package testutil \
+    -destination=x/checkers/testutil/expected_keepers_mocks.go
+```
+
+- Create Makefile to automate the above as it will be used frequently
+
+- Run Makefile
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    make mock-expected-keepers
+```
+
+- After writing all tests and updating others make sure all tests work
+
+```bash
+docker exec -it checkers \
+    go test github.com/BenWolfaardt/checkers/x/checkers/keeper
+```
+
+- Check balances
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+docker exec -it checkers \
+    checkersd query bank balances $bob
+```
+
+- Create a game on which the wager will be refunded because the player playing red did not join
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob 1000000 --from $alice
+```
+
+- Confirm that the balances of both Alice and Bob are unchanged - as they have not played yet.
+
+- Have Alice play
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+```
+
+- Confirm that Alice has paid her wager
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+
+    # balances:
+    # - amount: "99000000" # <- 1,000,000 fewer
+    # denom: stake
+    # - amount: "20000"
+    # denom: token
+    # pagination:
+    # next_key: null
+    # total: "0"
+```
+
+- Wait 5 minutes for the game to expire and check again
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+
+    # balances:
+    # - amount: "100000000" # <- 1,000,000 are back
+    #   denom: stake
+    # - amount: "20000"
+    #   denom: token
+    # pagination:
+    #   next_key: null
+    #   total: "0"
+```
+
+- Now create a game in which both players only play once each, i.e. where the player playing black forfeits
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game $alice $bob 1000000 --from $alice
+docker exec -it checkers \
+    checkersd tx checkers play-move 2 1 2 2 3 --from $alice
+docker exec -it checkers \
+    checkersd tx checkers play-move 2 0 5 1 4 --from $bob
+```
+
+- Confirm that both Alice and Bob paid their wagers. Wait 5 minutes for the game to expire and check again
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+docker exec -it checkers \
+    checkersd query bank balances $bob
+
+    # balances:
+    # - amount: "99000000" # <- her 1,000,000 are gone for good
+    # denom: stake
+    # ...
+    # balances:
+    # - amount: "101000000" # <- 1,000,000 more than at the beginning
+    # denom: stake
+    # ...
 ```
 
 
