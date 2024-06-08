@@ -96,7 +96,7 @@ func (suite *IntegrationTestSuite) TestForfeitPlayedOnceRefundedEmitted() {
 	suite.Require().EqualValues([]sdk.Attribute{
 		{Key: "recipient", Value: bob},
 		{Key: "sender", Value: checkersModuleAddress},
-		{Key: "amount", Value: "45stake"},
+		{Key: "amount", Value: "45coin"},
 	}, transferEvent.Attributes[3:])
 }
 
@@ -108,6 +108,7 @@ func (suite *IntegrationTestSuite) TestForfeitPlayedOnceRefundedEvenZero() {
 		Black:   carol,
 		Red:     alice,
 		Wager:   0,
+		Denom:   "coin",
 	})
 	suite.RequireBankBalance(balCarol, carol)
 	suite.msgServer.PlayMove(goCtx, &types.MsgPlayMove{
@@ -144,6 +145,7 @@ func (suite *IntegrationTestSuite) TestForfeitPlayedOnceRefundedEmittedEvenZero(
 		Black:   carol,
 		Red:     alice,
 		Wager:   0,
+		Denom:   "coin",
 	})
 	suite.RequireBankBalance(balCarol, carol)
 	suite.msgServer.PlayMove(goCtx, &types.MsgPlayMove{
@@ -266,7 +268,7 @@ func (suite *IntegrationTestSuite) TestForfeitPlayedTwicePaidEmitted() {
 	suite.Require().EqualValues([]sdk.Attribute{
 		{Key: "recipient", Value: carol},
 		{Key: "sender", Value: checkersModuleAddress},
-		{Key: "amount", Value: "90stake"},
+		{Key: "amount", Value: "90coin"},
 	}, transferEvent.Attributes[6:])
 }
 
@@ -278,6 +280,7 @@ func (suite *IntegrationTestSuite) TestForfeitOlderPlayedTwicePaidEvenZero() {
 		Red:     bob,
 		Black:   carol,
 		Wager:   0,
+		Denom:   "coin",
 	})
 	suite.msgServer.PlayMove(goCtx, &types.MsgPlayMove{
 		Creator:   carol,
@@ -322,6 +325,7 @@ func (suite *IntegrationTestSuite) TestForfeitOlderPlayedTwicePaidEmittedvenZero
 		Red:     bob,
 		Black:   carol,
 		Wager:   0,
+		Denom:   "coin",
 	})
 	suite.msgServer.PlayMove(goCtx, &types.MsgPlayMove{
 		Creator:   carol,

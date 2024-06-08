@@ -977,6 +977,106 @@ docker exec -it checkers \
     go test github.com/BenWolfaardt/checkers/tests/integration/checker
 s/keeper
 ```
+
+#### Play with Cross-Chain Tokens
+
+- Recompile the protobufs after adding `denom` to `MsgCreateGame` and `StoredGame`
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite generate proto-go
+```  
+
+- Update all tests accounting for the `denom`
+
+```bash
+go test github.com/BenWolfaardt/checkers/x/checkers/keeper
+```
+
+- Reset and restart chain
+
+> Export addresses
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+
+    # balances:
+    # - amount: "100000000"
+    #   denom: stake
+    # - amount: "20000"
+    #   denom: token
+    # pagination:
+    #   next_key: null
+    #   total: "0"
+```
+   
+- You can make use of this other token to create a new game
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers create-game \
+    $alice $bob 1 token \
+    --from $alice
+
+    # ...
+    # - key: wager
+    #   value: "1"
+    # - key: denom
+    #   value: token
+    # ...
+```
+    
+- Have Alice play once
+
+```bash
+docker exec -it checkers \
+    checkersd tx checkers play-move 1 1 2 2 3 --from $alice
+
+    # - attributes:
+    #   - key: recipient
+    #     value: cosmos16xx0e457hm8mywdhxtmrar9t09z0mqt9x7srm3
+    #   - key: sender
+    #     value: cosmos1d2ftstec7v6glkmtz820lnu5x929cm9vv2m99d
+    #   - key: amount
+    #     value: 1token
+    #   type: transfer
+```
+    
+- Check to see if Alice has been charged the wager?
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances $alice
+
+    # balances:
+    # - amount: "100000000"
+    #   denom: stake
+    # - amount: "19999"
+    #   denom: token
+    # pagination:
+    #   next_key: null
+    #   total: "0"
+```
+ 
+- Now check the checkers module's balance
+
+> `cosmos16xx0e457hm8mywdhxtmrar9t09z0mqt9x7srm3` is the checkers module's address.
+
+```bash
+docker exec -it checkers \
+    checkersd query bank balances cosmos16xx0e457hm8mywdhxtmrar9t09z0mqt9x7srm3
+
+    # balances:
+    # - amount: "1"
+    #   denom: token
+    # pagination:
+    #   next_key: null
+    #   total: "0"
+```
     
 - 
 
@@ -984,7 +1084,18 @@ s/keeper
 
 ```
     
+- 
 
+```bash
+
+```
+    
+- 
+
+```bash
+
+```
+    
 
 ## Notes
 
