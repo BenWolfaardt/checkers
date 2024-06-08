@@ -1739,34 +1739,349 @@ go test -v github.com/BenWolfaardt/checkers/x/checkers/migrations/cv3/keeper
 go test -v github.com/BenWolfaardt/checkers/tests/integration/checkers/migrations/cv3
 ```
 
-- 
+- Checkout `v1` of the chain
 
 ```bash
-
+git checkout b0e8ddafecb2f3a040c7463f544ce5c14a9e0341
 ```
 
-- 
+> It is important to note that the `/root/.checkers/*` directory that was created from our `docker-compose.yml` setup and that it needs to be deleted before we can continue with the below and start a new chain instance. Be sure to backup any necessary files or have your state in your `docker-compose.yml` configuration. 
+
+- Build the v1 executable for your platform
 
 ```bash
-
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go build -o release/v1/checkersd cmd/checkersd/main.go
+    # Output: release/v1/checkersd
 ```
 
-- 
+> Because this is an exercise, to avoid messing with your keyring you must always specify --keyring-backend test.
+
+- Add two players
 
 ```bash
+docker network create checkers-net
+docker create -it \
+    -v $(pwd):/checkers -w /checkers \
+    -p 26657:26657 \
+    --network checkers-net \
+    --name checkers \
+    checkers_i
+docker start checkers
+docker exec -t checkers \
+    ./release/v1/checkersd keys add alice --keyring-backend test
 
+# - name: alice
+#   type: local
+#   address: cosmos1rdy0f88hvjqh2k7pwksut25hqxc9r58lvhtc23
+#   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AoluoXr57GKFZWd5GYTYWEtBEBJzCmcbPEqzPj23+By4"}'
+#   mnemonic: "enforce crash riot produce glide genius erupt umbrella chimney that unique robot stock degree great problem normal clutch bunker wood fuel museum decade speed"
+
+docker exec -t checkers \
+    ./release/v1/checkersd keys add bob --keyring-backend test
+
+    # - name: bob
+    #   type: local
+    #   address: cosmos1uftxtuzz0xs64zzddfw5dm56t3qax5h3e3vut4
+    #   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A9PWDZj0z88It4TdAPhis25I8D4KBPWJGCXMYua49E3Z"}'
+    #   mnemonic: "cattle help grass surprise broom debris ozone member crumble damage hotel repeat hockey lion polar code cradle leisure dry guard asthma pigeon naive thunder"
 ```
 
-- 
+- Create a new genesis
 
 ```bash
-
+docker exec -t checkers \
+    ./release/v1/checkersd init checkers-1 --chain-id checkers-1
 ```
 
-- 
+- Give your players the same token amounts that were added by Ignite, as found in `config.yml`:
 
 ```bash
+docker exec -t checkers \
+    ./release/v1/checkersd add-genesis-account \
+    alice 200000000stake,20000token --keyring-backend test
+docker exec -t checkers \
+    ./release/v1/checkersd add-genesis-account \
+    bob 100000000stake,10000token --keyring-backend test
+```
 
+- To be able to run a quick test, you need to change the voting period of a proposal. This is found in the genesis
+
+```bash
+docker exec -it checkers \
+    jq '.app_state.gov.voting_params.voting_period' /root/.checkers/config/genesis.json
+    # "172800s"
+```
+
+- That is two days, which is too long to wait for CLI tests. Choose another value, perhaps 2 minutes, i.e. `"120s"`. Update it in place in the genesis
+
+```bash
+docker exec -t checkers \
+    bash -c "cat <<< \$(jq '.app_state.gov.voting_params.voting_period = \"120s\"' /root/.checkers/config/genesis.json) \
+    > /root/.checkers/config/genesis.json"
+```
+
+> You can confirm that the value is in using the earlier command.
+
+- Make Alice the chain's validator too by creating a genesis transaction modeled on that done by Ignite, as found in `config.yml`
+
+```bash
+docker exec -t checkers \
+    ./release/v1/checkersd gentx alice 100000000stake \
+    --keyring-backend test --chain-id checkers-1
+docker exec -t checkers \
+    ./release/v1/checkersd collect-gentxs
+```
+
+- Now you can start the chain proper
+
+```bash
+docker exec -it checkers \
+    ./release/v1/checkersd start \
+    --rpc.laddr "tcp://0.0.0.0:26657"
+```
+
+- Add games
+
+```bash
+export alice=$(docker exec checkers ./release/v1/checkersd keys show alice -a --keyring-backend test)
+export bob=$(docker exec checkers ./release/v1/checkersd keys show bob -a --keyring-backend test)
+docker exec -t checkers \
+    ./release/v1/checkersd tx checkers create-game \
+    $alice $bob 10 stake \
+    --from $alice --keyring-backend test --yes \
+    --chain-id checkers-1 \
+    --broadcast-mode block
+```
+
+<!-- TODO: Requires the integration tests from the CosmJS for Your Chain section -->
+
+- For the software upgrade governance proposal, you want to make sure that it stops the chain not too far in the future but still after the voting period. With a voting period of 10 minutes, take 15 minutes. How many seconds does a block take?
+
+```bash
+docker exec -t checkers \
+    bash -c 'jq -r ".app_state.mint.params.blocks_per_year" /root/.checkers/config/genesis.json'
+    # 6311520  <-- 5 seconds per block. At this rate, 2 minutes mean 24 blocks.
+```
+
+- What is the current block height?
+
+```bash
+docker exec -t checkers \
+    bash -c './release/v1/checkersd status \
+        | jq -r ".SyncInfo.latest_block_height"'
+    # 30
+```
+
+> Take this block heigh and add 180 therefore, `--upgrade-height <30 + 24 >`
+
+- What is the minimum deposit for a proposal?
+
+```bash
+docker exec -t checkers \
+    bash -c 'jq ".app_state.gov.deposit_params.min_deposit" \
+        /root/.checkers/config/genesis.json'
+
+    # [
+    #     {
+    #         "denom": "stake",
+    #         "amount": "10000000"
+    #     }
+    # ]
+```
+
+> This is the minimum amount that Alice has to deposit when submitting the proposal. This will do: `--deposit 10000000stake`
+
+- Submit your governance proposal upgrade
+
+> Update to your desired `--upgrade-height <height>`
+
+```bash
+docker exec -t checkers \
+    ./release/v1/checkersd tx gov submit-proposal software-upgrade v1tov1_1 \
+    --title "v1tov1_1" \
+    --description "Introduce a tally of games per player" \
+    --from $alice --keyring-backend test --yes \
+    --chain-id checkers-1 \
+    --broadcast-mode block \
+    --upgrade-height 54 \
+    --deposit 10000000stake
+
+    # - attributes:
+    #   - key: proposal_id
+    #     value: "1"
+    #   - key: proposal_type
+    #     value: SoftwareUpgrade
+    #   - key: voting_period_start
+    #     value: "1"
+    #   type: submit_proposal
+```
+
+- Where `1` is the proposal ID you reuse. Have Alice and Bob vote yes on it
+
+```bash
+docker exec -t checkers \
+    ./release/v1/checkersd tx gov vote 1 yes \
+    --from $alice --keyring-backend test --yes \
+    --chain-id checkers-1
+docker exec -t checkers \
+    ./release/v1/checkersd tx gov vote 1 yes \
+    --from $bob --keyring-backend test --yes \
+    --chain-id checkers-1
+```
+
+- Confirm that it has collected the votes
+
+```bash
+docker exec -t checkers \
+    ./release/v1/checkersd query gov votes 1
+
+    # votes:
+    # - option: VOTE_OPTION_YES
+    #   options:
+    #   - option: VOTE_OPTION_YES
+    #     weight: "1.000000000000000000"
+    #   proposal_id: "1"
+    #   voter: cosmos1zkmc72ac9zjy2gr5dfdmnkj6wqd072ef8ntses
+    # - option: VOTE_OPTION_YES
+    #   options:
+    #   - option: VOTE_OPTION_YES
+    #     weight: "1.000000000000000000"
+    #   proposal_id: "1"
+    #   voter: cosmos1394z74aprj2x8xwxlf7jyj3zp3ns79u6k9heal
+```
+
+- See how long you have to wait for the chain to reach the end of the voting period
+
+```bash
+docker exec -t checkers \
+    ./release/v1/checkersd query gov proposal 1
+
+    # ...
+    # status: PROPOSAL_STATUS_VOTING_PERIOD
+    # ...
+    # voting_end_time: "2024-06-08T17:30:09.881755722Z"
+    # ...
+```
+
+- Wait for this period. Afterward, with the same command you should see
+
+```bash
+...
+status: PROPOSAL_STATUS_PASSED
+...
+```
+
+- Now, wait for the chain to reach the desired block height, which should take five more minutes, as per your parameters. When it has reached that height, the shell with the running `checkersd` should show something like
+
+```bash
+...
+5:55PM INF finalizing commit of block hash=E6CBD7E5A7FA47ECB3259DDB73DFA69D815EA99101E2E1A1EF5B925FC0380ED5 height=75 module=consensus num_txs=0 root=2CE9C9B08BAE3D66710E3594C23645AA45F820CD2640C7D403D13F6F4DC90DEF
+5:55PM ERR UPGRADE "v1tov1_1" NEEDED at height: 75: 
+5:55PM ERR CONSENSUS FAILURE!!! err="UPGRADE \"v1tov1_1\" NEEDED at height: 75: " module=consensus stack="goroutine 23 [running]:\nruntime/debug.Stack
+...
+5:55PM INF Stopping baseWAL service impl={"Logger":{}} module=consensus wal=/root/.checkers/data/cs.wal/wal
+5:55PM INF Stopping Group service impl={"Dir":"/root/.checkers/data/cs.wal","Head":{"ID":"pMLx3SbYdq5D:/root/.checkers/data/cs.wal/wal","Path":"/root/.checkers/data/cs.wal/wal"},"ID":"group:pMLx3SbYdq5D:/root/.checkers/data/cs.wal/wal","Logger":{}} module=consensus wal=/root/.checkers/data/cs.wal/wal
+5:55PM INF Timed out dur=3000 height=75 module=consensus round=0 step=3
+...
+```
+
+- At this point, run in another shell
+
+```bash
+docker exec -it checkers \
+    bash -c './release/v1/checkersd status \
+        | jq -r ".SyncInfo.latest_block_height"'
+```
+
+- You should always get the same value, no matter how many times you try. That is because the chain has stopped. For instance:
+
+```bash
+75
+```
+
+- Stop `checkersd` with CTRL-C. It has saved a new file:
+
+```bash
+docker exec -it checkers \
+    cat /root/.checkers/data/upgrade-info.json
+```
+
+- This prints
+
+```bash
+{"name":"v1tov1_1","height":75}
+```
+
+- With your node (and therefore your whole blockchain) down, you are ready to move to v1.1
+
+```bash
+git checkout master
+```
+
+- Back in the first shell, build the v1.1 executable
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go build -o ./release/v1_1/checkersd ./cmd/checkersd/main.go
+```
+
+- Launch it
+
+```bash
+docker exec -it checkers \
+    ./release/v1_1/checkersd start \
+    --rpc.laddr "tcp://0.0.0.0:26657"
+```
+
+- It should start and display something like
+
+```bash
+...
+6:02PM INF applying upgrade "v1tov1_1" at height: 75
+6:02PM INF migrating module checkers from version 2 to version 3
+6:02PM INF Start to compute checkers games to player info calculation...
+6:02PM INF Checkers games to player info computation done
+...
+```
+
+- After it has started, you can confirm in another shell that you have the expected player info with
+
+```bash
+docker exec -t checkers \
+    ./release/v1_1/checkersd query checkers list-player-info
+```
+
+- This should print something like
+
+<!-- TODO: fill in data -->
+
+```bash
+playerInfo:
+- forfeitedCount: "0"
+  index: cosmos1fx6qlxwteeqxgxwsw83wkf4s9fcnnwk8z86sql
+  lostCount: "0"
+  wonCount: "3"
+- forfeitedCount: "0"
+  index: cosmos1mql9aaux3453tdghk6rzkmk43stxvnvha4nv22
+  lostCount: "3"
+  wonCount: "0"
+```
+
+> Congratulations, you have upgraded your blockchain almost as if in production!
+
+- You can stop Ignite CLI. If you used Docker that would be
+
+```bash
+$ docker stop checkers
+$ docker rm checkers
+$ docker network rm checkers-net
 ```
 
 - 
@@ -1783,3 +2098,4 @@ go test -v github.com/BenWolfaardt/checkers/tests/integration/checkers/migration
 - Dev container means you can do all locally
 - Can't run checkersd commands with spaces in front or you get: `Error: rpc error: code = NotFound desc = rpc error: code = NotFound desc = not found: key not found`
 - In going to prod I exited the dev container
+- I deleted all .checkers in root before the Tally player info 
