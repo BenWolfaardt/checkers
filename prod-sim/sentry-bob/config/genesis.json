@@ -1,0 +1,389 @@
+{
+  "genesis_time": "2024-06-08T01:29:00.094940701Z",
+  "chain_id": "checkers-1",
+  "initial_height": "1",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "22020096",
+      "max_gas": "-1",
+      "time_iota_ms": "1000"
+    },
+    "evidence": {
+      "max_age_num_blocks": "100000",
+      "max_age_duration": "172800000000000",
+      "max_bytes": "1048576"
+    },
+    "validator": {
+      "pub_key_types": [
+        "ed25519"
+      ]
+    },
+    "version": {}
+  },
+  "app_hash": "",
+  "app_state": {
+    "auth": {
+      "params": {
+        "max_memo_characters": "256",
+        "tx_sig_limit": "7",
+        "tx_size_cost_per_byte": "10",
+        "sig_verify_cost_ed25519": "590",
+        "sig_verify_cost_secp256k1": "1000"
+      },
+      "accounts": [
+        {
+          "@type": "/cosmos.auth.v1beta1.BaseAccount",
+          "address": "cosmos1rcqaz0qcm73lt4raet3u56avulzlv68uqxv0wy",
+          "pub_key": null,
+          "account_number": "0",
+          "sequence": "0"
+        },
+        {
+          "@type": "/cosmos.auth.v1beta1.BaseAccount",
+          "address": "cosmos1hqca6pqtqcvk7razsydx9xugjc22706r7qkyfz",
+          "pub_key": null,
+          "account_number": "0",
+          "sequence": "0"
+        }
+      ]
+    },
+    "authz": {
+      "authorization": []
+    },
+    "bank": {
+      "params": {
+        "send_enabled": [],
+        "default_send_enabled": true
+      },
+      "balances": [
+        {
+          "address": "cosmos1rcqaz0qcm73lt4raet3u56avulzlv68uqxv0wy",
+          "coins": [
+            {
+              "denom": "upawn",
+              "amount": "1000000000"
+            }
+          ]
+        },
+        {
+          "address": "cosmos1hqca6pqtqcvk7razsydx9xugjc22706r7qkyfz",
+          "coins": [
+            {
+              "denom": "upawn",
+              "amount": "500000000"
+            }
+          ]
+        }
+      ],
+      "supply": [],
+      "denom_metadata": []
+    },
+    "capability": {
+      "index": "1",
+      "owners": []
+    },
+    "checkers": {
+      "params": {},
+      "systemInfo": {
+        "nextId": "1",
+        "fifoHeadIndex": "-1",
+        "fifoTailIndex": "-1"
+      },
+      "storedGameList": []
+    },
+    "crisis": {
+      "constant_fee": {
+        "denom": "upawn",
+        "amount": "1000"
+      }
+    },
+    "distribution": {
+      "params": {
+        "community_tax": "0.020000000000000000",
+        "base_proposer_reward": "0.010000000000000000",
+        "bonus_proposer_reward": "0.040000000000000000",
+        "withdraw_addr_enabled": true
+      },
+      "fee_pool": {
+        "community_pool": []
+      },
+      "delegator_withdraw_infos": [],
+      "previous_proposer": "",
+      "outstanding_rewards": [],
+      "validator_accumulated_commissions": [],
+      "validator_historical_rewards": [],
+      "validator_current_rewards": [],
+      "delegator_starting_infos": [],
+      "validator_slash_events": []
+    },
+    "evidence": {
+      "evidence": []
+    },
+    "feegrant": {
+      "allowances": []
+    },
+    "genutil": {
+      "gen_txs": [
+        {
+          "body": {
+            "messages": [
+              {
+                "@type": "/cosmos.staking.v1beta1.MsgCreateValidator",
+                "description": {
+                  "moniker": "checkers",
+                  "identity": "",
+                  "website": "",
+                  "security_contact": "",
+                  "details": ""
+                },
+                "commission": {
+                  "rate": "0.100000000000000000",
+                  "max_rate": "0.200000000000000000",
+                  "max_change_rate": "0.010000000000000000"
+                },
+                "min_self_delegation": "1",
+                "delegator_address": "cosmos1rcqaz0qcm73lt4raet3u56avulzlv68uqxv0wy",
+                "validator_address": "cosmosvaloper1rcqaz0qcm73lt4raet3u56avulzlv68u9jc6zh",
+                "pubkey": {
+                  "@type": "/cosmos.crypto.ed25519.PubKey",
+                  "key": "5aTAlsHuqIhYjrIa4b86H3h+8UsIwbs4ZkDcfWcR0y0="
+                },
+                "value": {
+                  "denom": "upawn",
+                  "amount": "60000000"
+                }
+              }
+            ],
+            "memo": "33b66e12bee9574afbc7b8811b2b6a1233e61178@172.17.0.2:26656",
+            "timeout_height": "0",
+            "extension_options": [],
+            "non_critical_extension_options": []
+          },
+          "auth_info": {
+            "signer_infos": [
+              {
+                "public_key": {
+                  "@type": "/cosmos.crypto.secp256k1.PubKey",
+                  "key": "Ai1Oe5ny2zKIEUyY57qRQYt1e8Xyt2TkPScYwdurLAa6"
+                },
+                "mode_info": {
+                  "single": {
+                    "mode": "SIGN_MODE_DIRECT"
+                  }
+                },
+                "sequence": "0"
+              }
+            ],
+            "fee": {
+              "amount": [
+                {
+                  "denom": "upawn",
+                  "amount": "100000"
+                }
+              ],
+              "gas_limit": "1000000",
+              "payer": "",
+              "granter": ""
+            }
+          },
+          "signatures": [
+            "Yy75ujGGE/2Ow4Xq8CsVKgo/7aQ+XELBhQ8BbIRQdNYuhqkYPmjWFCguOvtS8Wcfo+gLbc6+QLXVwLLAxx2HRQ=="
+          ]
+        },
+        {
+          "body": {
+            "messages": [
+              {
+                "@type": "/cosmos.staking.v1beta1.MsgCreateValidator",
+                "description": {
+                  "moniker": "checkers",
+                  "identity": "",
+                  "website": "",
+                  "security_contact": "",
+                  "details": ""
+                },
+                "commission": {
+                  "rate": "0.100000000000000000",
+                  "max_rate": "0.200000000000000000",
+                  "max_change_rate": "0.010000000000000000"
+                },
+                "min_self_delegation": "1",
+                "delegator_address": "cosmos1hqca6pqtqcvk7razsydx9xugjc22706r7qkyfz",
+                "validator_address": "cosmosvaloper1hqca6pqtqcvk7razsydx9xugjc22706rm5z393",
+                "pubkey": {
+                  "@type": "/cosmos.crypto.ed25519.PubKey",
+                  "key": "rw/S1/YvW9FPhngYMf3KbEalTM/Ua/zvy2kntXT/0+c="
+                },
+                "value": {
+                  "denom": "upawn",
+                  "amount": "40000000"
+                }
+              }
+            ],
+            "memo": "be9b472c56d4a7082eadd1e6094165a55407fd51@172.17.0.2:26656",
+            "timeout_height": "0",
+            "extension_options": [],
+            "non_critical_extension_options": []
+          },
+          "auth_info": {
+            "signer_infos": [
+              {
+                "public_key": {
+                  "@type": "/cosmos.crypto.secp256k1.PubKey",
+                  "key": "A3323khiZqwJ4aQbpGaKjGi3dkc+JrFM8qoTIO50PQMN"
+                },
+                "mode_info": {
+                  "single": {
+                    "mode": "SIGN_MODE_DIRECT"
+                  }
+                },
+                "sequence": "0"
+              }
+            ],
+            "fee": {
+              "amount": [
+                {
+                  "denom": "upawn",
+                  "amount": "100000"
+                }
+              ],
+              "gas_limit": "1000000",
+              "payer": "",
+              "granter": ""
+            }
+          },
+          "signatures": [
+            "Bwm2DRT/U48/OglpP68tJQiuBc88JUb9C5Cs0L6ShWAV81U2hwzW5iWq9wm+y8zAKgg581JpaXf9PqcqyR2KKA=="
+          ]
+        }
+      ]
+    },
+    "gov": {
+      "starting_proposal_id": "1",
+      "deposits": [],
+      "votes": [],
+      "proposals": [],
+      "deposit_params": {
+        "min_deposit": [
+          {
+            "denom": "upawn",
+            "amount": "10000000"
+          }
+        ],
+        "max_deposit_period": "172800s"
+      },
+      "voting_params": {
+        "voting_period": "172800s"
+      },
+      "tally_params": {
+        "quorum": "0.334000000000000000",
+        "threshold": "0.500000000000000000",
+        "veto_threshold": "0.334000000000000000"
+      }
+    },
+    "ibc": {
+      "client_genesis": {
+        "clients": [],
+        "clients_consensus": [],
+        "clients_metadata": [],
+        "params": {
+          "allowed_clients": [
+            "06-solomachine",
+            "07-tendermint"
+          ]
+        },
+        "create_localhost": false,
+        "next_client_sequence": "0"
+      },
+      "connection_genesis": {
+        "connections": [],
+        "client_connection_paths": [],
+        "next_connection_sequence": "0",
+        "params": {
+          "max_expected_time_per_block": "30000000000"
+        }
+      },
+      "channel_genesis": {
+        "channels": [],
+        "acknowledgements": [],
+        "commitments": [],
+        "receipts": [],
+        "send_sequences": [],
+        "recv_sequences": [],
+        "ack_sequences": [],
+        "next_channel_sequence": "0"
+      }
+    },
+    "mint": {
+      "minter": {
+        "inflation": "0.130000000000000000",
+        "annual_provisions": "0.000000000000000000"
+      },
+      "params": {
+        "mint_denom": "upawn",
+        "inflation_rate_change": "0.130000000000000000",
+        "inflation_max": "0.200000000000000000",
+        "inflation_min": "0.070000000000000000",
+        "goal_bonded": "0.670000000000000000",
+        "blocks_per_year": "6311520"
+      }
+    },
+    "monitoringp": {
+      "port_id": "monitoringp",
+      "consumerClientID": null,
+      "connectionChannelID": null,
+      "monitoringInfo": null,
+      "params": {
+        "lastBlockHeight": "1",
+        "consumerChainID": "spn-1",
+        "consumerConsensusState": {
+          "nextValidatorsHash": "",
+          "timestamp": "",
+          "root": {
+            "hash": ""
+          }
+        },
+        "consumerUnbondingPeriod": "1814400",
+        "consumerRevisionHeight": "1"
+      }
+    },
+    "params": null,
+    "slashing": {
+      "params": {
+        "signed_blocks_window": "100",
+        "min_signed_per_window": "0.500000000000000000",
+        "downtime_jail_duration": "600s",
+        "slash_fraction_double_sign": "0.050000000000000000",
+        "slash_fraction_downtime": "0.010000000000000000"
+      },
+      "signing_infos": [],
+      "missed_blocks": []
+    },
+    "staking": {
+      "params": {
+        "unbonding_time": "1814400s",
+        "max_validators": 100,
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "bond_denom": "upawn"
+      },
+      "last_total_power": "0",
+      "last_validator_powers": [],
+      "validators": [],
+      "delegations": [],
+      "unbonding_delegations": [],
+      "redelegations": [],
+      "exported": false
+    },
+    "transfer": {
+      "port_id": "transfer",
+      "denom_traces": [],
+      "params": {
+        "send_enabled": true,
+        "receive_enabled": true
+      }
+    },
+    "upgrade": {},
+    "vesting": {}
+  }
+}

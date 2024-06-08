@@ -1077,25 +1077,659 @@ docker exec -it checkers \
     #   next_key: null
     #   total: "0"
 ```
-    
+
+### CosmJS for Your Chain
+
+> Skipped this section for now
+
+### From Code to MVP to Production and Migrations
+
+#### Simulate Production in Docker
+
+- Update Makefile then run
+
+```bash
+docker exec -it checkers \
+    make build-with-checksum
+```
+
+- Create `Dockerfile-checkersd-debian` and build the image
+
+```bash
+docker build -f prod-sim/Dockerfile-checkersd-debian . -t checkersd_i
+```
+
+- You may want to use a smaller `Alpine` image, so create `Dockerfile-checkersd-alpine` and build the image
+
+```bash
+docker build -f prod-sim/Dockerfile-checkersd-alpine . -t checkersd_i
+```
+
+- Add Alpine section into `Makefile` for `make build-with-checksum`
+
+```bash
+make build-with-checksum
+```
+
+- Now you can run your image
+
+```bash
+docker run --rm -it checkersd_i help
+```
+
+- Now create the `Dockerfile-tmkms-debian` and `Dockerfile-tmkms-alpine` files before building the one of your choice
+
+```bash
+docker build -f prod-sim/Dockerfile-tmkms-alpine . -t tmkms_i:v0.12.2
+```
+
+- Each container needs access to its private information, such as keys, genesis, and database. To facilitate data access and separation between containers, create folders that will map as a volume to the default `/root/.checkers` or `/root/tmkms` inside containers.
+
+```bash
+mkdir -p prod-sim/kms-alice
+mkdir -p prod-sim/node-carol
+mkdir -p prod-sim/sentry-alice
+mkdir -p prod-sim/sentry-bob
+mkdir -p prod-sim/val-alice
+mkdir -p prod-sim/val-bob
+```
+
+- Also add the desktop computers of Alice and Bob, so that they never have to put keys on a server that should never see them:
+
+```bash
+mkdir -p prod-sim/desk-alice
+mkdir -p prod-sim/desk-bob
+```
+
+- Before you can change the configuration you need to initialize it. Do it on all nodes with this one-liner:
+
+```bash
+echo -e desk-alice'\n'desk-bob'\n'node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    checkersd_i \
+    init checkers
+```
+
+- Update `desk-alice/config/gensis.json` to use `upawn` denom
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -i 's/"stake"/"upawn"/g' /root/.checkers/config/genesis.json
+```
+
+- In all seven `config/app.toml`
+
+```bash
+echo -e desk-alice'\n'desk-bob'\n'node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/([0-9]+)stake/\1upawn/g' /root/.checkers/config/app.toml
+```
+
+- Make sure that `config/client.toml` mentions `checkers-1`, the chain's name:
+
+```bash
+echo -e desk-alice'\n'desk-bob'\n'node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/^chain-id = .*$/chain-id = "checkers-1"/g' \
+    /root/.checkers/config/client.toml
+```
+
+- Create on `desk-alice` the operator key for `val-alice`:
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    add alice
+```
+
+> Use a passphrase you can remember. It does not need to be exceptionally complex as this is all a local simulation. This exercise uses `password` and stores this detail on file, which will become handy.
+
+- Save so that we don't forget it
+
+```bash
+echo -n password > prod-sim/desk-alice/keys/passphrase.txt
+```
+
+> Because with this prod simulation you care less about safety, so much less in fact, you can even keep the mnemonic on file too.
+
+- Do the same for val-bob
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-bob:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    add bob
+
+echo -n password > prod-sim/desk-bob/keys/passphrase.txt
+```
+
+- 
+
+> As per the [documentation](https://github.com/iqlusioninc/tmkms/tree/v0.12.2#configuration-tmkms-init) initialize the KMS folder
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+    tmkms_i:v0.12.2 \
+    init /root/tmkms
+```
+
+- In the newly-created `kms-alice/tmkms.toml` file make sure that you use the right protocol version.
+
+```bash
+docker run --rm -i \
+  -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+  --entrypoint sed \
+  tmkms_i:v0.12.2 \
+  -Ei 's/^protocol_version = .*$/protocol_version = "v0.34"/g' \
+  /root/tmkms/tmkms.toml
+```
+
+- Pick an expressive name for the file that will contain the `softsign` key for `val-alice`
+
+```bash
+docker run --rm -i \
+  -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+  --entrypoint sed \
+  tmkms_i:v0.12.2 \
+  -Ei 's/path = "\/root\/tmkms\/secrets\/cosmoshub-3-consensus.key"/path = "\/root\/tmkms\/secrets\/val-alice-consensus.key"/g' \
+  /root/tmkms/tmkms.toml
+```
+
+- Replace cosmoshub-3 with checkers-1, the name of your blockchain, wherever the former appears
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+    --entrypoint sed \
+    tmkms_i:v0.12.2 \
+    -Ei 's/cosmoshub-3/checkers-1/g' /root/tmkms/tmkms.toml
+```
+
+- Now you need to import `val-alice`'s consensus key in `secrets/val-alice-consensus.key`.
+
+> The private key will no longer be needed on `val-alice`. However, during the genesis creation Alice will need access to her consensus public key. Save it in a new `pub_validator_key-val-alice.json` on Alice's desk without any new line
+
+```bash
+docker run --rm -t \
+    -v $(pwd)/prod-sim/val-alice:/root/.checkers \
+    checkersd_i \
+    tendermint show-validator \
+    | tr -d '\n' | tr -d '\r' \
+    > prod-sim/desk-alice/config/pub_validator_key-val-alice.json
+```
+
+- The consensus private key should not reside on the validator. You can simulate that by moving it out
+
+```bash
+cp prod-sim/val-alice/config/priv_validator_key.json \
+  prod-sim/desk-alice/config/priv_validator_key-val-alice.json
+mv prod-sim/val-alice/config/priv_validator_key.json \
+  prod-sim/kms-alice/secrets/priv_validator_key-val-alice.json
+```
+
+- Import it into the softsign "device" as defined in `tmkms.toml`
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+    -w /root/tmkms \
+    tmkms_i:v0.12.2 \
+    softsign import secrets/priv_validator_key-val-alice.json \
+    secrets/val-alice-consensus.key
+```
+
+- On start, `val-alice` may still recreate a missing private key file due to how defaults are handled in the code. To prevent that, you can instead copy it from `sentry-alice` where it has no value.
+
+```bash
+cp prod-sim/sentry-alice/config/priv_validator_key.json \
+    prod-sim/val-alice/config/
+```
+
+- With the key created you now set up the connection from `kms-alice` to `val-alice`.
+
+> Choose a port unused on val-alice, for instance 26659, and inform kms-alice
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/kms-alice:/root/tmkms \
+    --entrypoint sed \
+    tmkms_i:v0.12.2 \
+    -Ei 's/^addr = "tcp:.*$/addr = "tcp:\/\/val-alice:26659"/g' /root/tmkms/tmkms.toml
+```
+
+- Do not forget, you must inform Alice's validator that it should indeed listen on port `26659` in `val-alice/config/config.toml`.
+
+```bash
+docker run --rm -i \
+  -v $(pwd)/prod-sim/val-alice:/root/.checkers \
+  --entrypoint sed \
+  checkersd_i \
+  -Ei 's/priv_validator_laddr = ""/priv_validator_laddr = "tcp:\/\/0.0.0.0:26659"/g' \
+  /root/.checkers/config/config.toml
+```
+
+- Make sure it will not look for the consensus key on file
+
+```bash
+docker run --rm -i \
+  -v $(pwd)/prod-sim/val-alice:/root/.checkers \
+  --entrypoint sed \
+  checkersd_i \
+  -Ei 's/^priv_validator_key_file/# priv_validator_key_file/g' \
+  /root/.checkers/config/config.toml
+```
+
+- Make sure it will not look for the consensus state file either, as this is taken care of by the KMS
+
+```bash
+docker run --rm -i \
+  -v $(pwd)/prod-sim/val-alice:/root/.checkers \
+  --entrypoint sed \
+  checkersd_i \
+  -Ei 's/^priv_validator_state_file/# priv_validator_state_file/g' \
+  /root/.checkers/config/config.toml
+```
+
+- Earlier you chose checkers-1, so you adjust it here too `prod-sim/desk-alice/config/genesis.json`
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/"chain_id": "checkers"/"chain_id": "checkers-1"/g' \
+    /root/.checkers/config/genesis.json
+```
+
+- In this setup, Alice starts with 1,000 PAWN and Bob with 500 PAWN, of which Alice stakes 60 and Bob 40. With these amounts, the network cannot start if either of them is offline.
+
+> Get their respective addresses.
+
+```bash
+ALICE=$(echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    show alice --address)
+```
+
+- Have Alice add her initial balance in the genesis
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    add-genesis-account $ALICE 1000000000upawn
+```
+
+- Now move the genesis file to desk-bob. This mimics what would happen in a real-life setup.
+
+```bash
+mv prod-sim/desk-alice/config/genesis.json \
+    prod-sim/desk-bob/config/
+```
+
+- Have Bob add his own initial balance
+
+```bash
+BOB=$(echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-bob:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    show bob --address)
+
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-bob:/root/.checkers \
+    checkersd_i \
+    add-genesis-account $BOB 500000000upawn
+```
+
+- Bob is not using the Tendermint KMS but instead uses the validator key on file `priv_validator_key.json`. So, first make a copy of it on Bob's desktop.
+
+```bash
+cp prod-sim/val-bob/config/priv_validator_key.json \
+    prod-sim/desk-bob/config/priv_validator_key.json
+```
+
+- Bob appears in second position in `app_state.accounts`, so his `account_number` ought to be `1`; but it is in fact written as `0`, so you use `0`:
+
+```bash
+echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-bob:/root/.checkers \
+    checkersd_i \
+    gentx bob 40000000upawn \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    --account-number 0 --sequence 0 \
+    --chain-id checkers-1 \
+    --gas 1000000 \
+    --gas-prices 0.1upawn
+```
+
+- Again, insert Bob's chosen passphrase instead of password. Return the genesis to Alice.
+
+```bash
+mv prod-sim/desk-bob/config/genesis.json \
+    prod-sim/desk-alice/config/
+```
+
+- Create Alice's genesis transaction using the specific validator public key that you saved on file, and not the key that would be taken from `priv_validator_key.json` by default (and is now missing).
+
+```bash
+echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    gentx alice 60000000upawn \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    --account-number 0 --sequence 0 \
+    --pubkey $(cat prod-sim/desk-alice/config/pub_validator_key-val-alice.json) \
+    --chain-id checkers-1 \
+    --gas 1000000 \
+    --gas-prices 0.1upawn
+```
+
+- With the two initial staking transactions created, have Alice include both of them in the genesis.
+
+```bash
+cp prod-sim/desk-bob/config/gentx/gentx-* \
+    prod-sim/desk-alice/config/gentx
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i collect-gentxs
+```
+
+- As an added precaution, confirm that it is a valid genesis.
+
+```bash
+docker run --rm -it \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    validate-genesis
+
+    # File at /root/.checkers/config/genesis.json is a valid genesis file
+```
+
+- All the nodes that will run the executable need the final version of the genesis. Copy it across.
+
+```bash
+echo -e desk-bob'\n'node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    cp prod-sim/desk-alice/config/genesis.json prod-sim/{}/config
+```
+
+- What are the nodes' public keys? For instance, for `val-alice`, it is.
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/val-alice:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7
+```
+
+- The nodes that have access to val-alice should know Alice's sentry by this identifier.
+
+```bash
+fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7@val-alice:26656
+```
+
+> Where `val-alice` will be resolved via Docker's DNS.
+
+- `26656` is the port as found in val-alice's configuration `prod-sim/val-alice/config/config.toml`
+
+```bash
+laddr = "tcp://0.0.0.0:26656"
+```
+
+- In the case of `val-alice`, only `sentry-alice` has access to it. Moreover, this is a persistent node. 
+
+> `sentry-alice`'s `prod-sim/sentry-alice/config/config.toml`
+
+```bash
+persistent_peers = "fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7@val-alice:26656"
+```
+
+- `sentry-alice` also has access to `sentry-bob` and `node-carol`, although these nodes should probably not be considered persistent. You will add them under `"seeds"`. First, collect the same information from these nodes.
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/sentry-bob:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # 94d8f467437996e61f457efef198662a30f27d1c
+docker run --rm -i \
+    -v $(pwd)/prod-sim/node-carol:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # 6501b18f1c75da22b3b657e630a117f4ce32c2f1
+```
+
+- Eventually, in `sentry-alice`'s `prod-sim/sentry-alice/config/config.toml`, you should have
+
+```bash
+seeds = "94d8f467437996e61f457efef198662a30f27d1c@sentry-bob:26656,6501b18f1c75da22b3b657e630a117f4ce32c2f1@node-carol:26656"
+persistent_peers = "fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7@val-alice:26656"
+```
+
+- Before moving on to other nodes, remember that `sentry-alice` should keep `val-alice` secret. Set
+
+```bash
+private_peer_ids = "fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7"
+```
+
+- Repeat the procedure for the other nodes, taking into account their specific circumstances.
+
+> Get `sentry-alice`'s node ID
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/sentry-alice:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # 1918dd30042fcc6ab8bb5edc9f405aca32a92cd9
+```
+
+- `val-alice`'s `prod-sim/val-alice/config/config.toml`
+
+```bash
+persistent_peers = "1918dd30042fcc6ab8bb5edc9f405aca32a92cd9@sentry-alice:26656"
+```
+
+- Get `sentry-bob`'s node ID
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/sentry-bob:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # 94d8f467437996e61f457efef198662a30f27d1c
+```
+
+- `val-bob`'s `prod-sim/val-bob/config/config.toml`
+
+```bash
+persistent_peers = "94d8f467437996e61f457efef198662a30f27d1c@sentry-bob:26656"
+```
+
+- Get `val-bob`'s node ID
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/val-bob:/root/.checkers \
+    checkersd_i \
+    tendermint show-node-id
+    # e2b55e791a2b47bcbbcaa7cc3b7d78073c581d00
+```
+
+- Get `val-alice`'s node ID
+
+```bash
+# fd9dc0618f9e1d39c37dcd7a6f77d4fabc6184e7
+```
+
+- Get `node-carol`'s node ID
+
+```bash
+# 6501b18f1c75da22b3b657e630a117f4ce32c2f1
+```
+
+- `sentry-bob`'s `prod-sim/sentry-bob/config/config.toml`
+
+```bash
+seeds = "1918dd30042fcc6ab8bb5edc9f405aca32a92cd9@sentry-alice:26656,6501b18f1c75da22b3b657e630a117f4ce32c2f1@node-carol:26656"
+persistent_peers = "e2b55e791a2b47bcbbcaa7cc3b7d78073c581d00@val-bob:26656"
+private_peer_ids = "e2b55e791a2b47bcbbcaa7cc3b7d78073c581d00"
+```
+
+- `node-carols`'s `prod-sim/node-carols/config/config.toml`
+
+```bash
+seeds = "1918dd30042fcc6ab8bb5edc9f405aca32a92cd9@sentry-alice:26656,94d8f467437996e61f457efef198662a30f27d1c@sentry-bob:26656"
+```
+
+- Carol created her node to open it to the public. Make sure that her node's RPC listens on all IP addresses
+
+```bash
+docker run --rm -i \
+    -v $(pwd)/prod-sim/node-carol:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei '0,/^laddr = .*$/{s/^laddr = .*$/laddr = "tcp:\/\/0.0.0.0:26657"/}' \
+    /root/.checkers/config/config.toml
+    # laddr = "tcp://0.0.0.0:26657"
+```
+
+- As a last step, you can disable CORS policies so that you are not surprised if you use a node from a Web browser.
+
+```bash
+echo -e node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/^cors_allowed_origins = \[\]/cors_allowed_origins = \["\*"\]/g' \
+    /root/.checkers/config/config.toml
+    # cors_allowed_origins = ["*"]
+```
+
+- In app.toml, first location
+
+```bash
+echo -e node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/^enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' \
+    /root/.checkers/config/app.toml
+    # enabled-unsafe-cors = true
+```
+
+- In app.toml, second location
+
+```bash
+echo -e node-carol'\n'sentry-alice'\n'sentry-bob'\n'val-alice'\n'val-bob \
+    | xargs -I {} \
+    docker run --rm -i \
+    -v $(pwd)/prod-sim/{}:/root/.checkers \
+    --entrypoint sed \
+    checkersd_i \
+    -Ei 's/^enable-unsafe-cors = false/enable-unsafe-cors = true/g' \
+    /root/.checkers/config/app.toml
+    # enable-unsafe-cors = true
+```
+
+- You are now ready to start your setup with a name other than the folder it is running in
+
+```bash
+docker compose \
+    --file prod-sim/docker-compose.yml \
+    --project-name checkers-prod up \
+    --detach
+```
+
 - 
 
 ```bash
-
 ```
-    
+
 - 
 
 ```bash
-
 ```
-    
+
 - 
 
 ```bash
-
 ```
-    
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
+- 
+
+```bash
+```
+
 
 ## Notes
 
@@ -1103,3 +1737,4 @@ docker exec -it checkers \
 - Oftentimes bob and alice need to be exported when reseting chain
 - Dev container means you can do all locally
 - Can't run checkersd commands with spaces in front or you get: `Error: rpc error: code = NotFound desc = rpc error: code = NotFound desc = not found: key not found`
+- In going to prod I exited the dev container
