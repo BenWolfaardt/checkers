@@ -1,0 +1,11 @@
+syntax = "proto3";
+package benwolfaardt.checkers.checkers;
+
+option go_package = "github.com/BenWolfaardt/checkers/x/checkers/types";
+
+message PlayerInfo {
+  string index = 1; 
+  uint64 wonCount = 2; 
+  uint64 lostCount = 3; 
+  uint64 forfeitedCount = 4; 
+}

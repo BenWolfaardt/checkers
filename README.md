@@ -1708,10 +1708,68 @@ docker compose --project-name checkers-prod down
 
 > Finished up until `Self-contained checkers blockchain` in this section.
 
+#### Tally Player Info After Production
+
+- Add a set of stats per player
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold map playerInfo \
+    wonCount:uint lostCount:uint forfeitedCount:uint \
+    --module checkers --no-message
+```
+
 - 
 
 ```bash
+
 ```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
 
 ## Notes
 

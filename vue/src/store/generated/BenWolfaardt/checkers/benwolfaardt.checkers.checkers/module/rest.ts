@@ -22,6 +22,21 @@ export interface CheckersMsgPlayMoveResponse {
   winner?: string;
 }
 
+export interface CheckersQueryAllPlayerInfoResponse {
+  playerInfo?: CheckerscheckersPlayerInfo[];
+
+  /**
+   * PageResponse is to be embedded in gRPC response messages where the
+   * corresponding request message has used PageRequest.
+   *
+   *  message SomeResponse {
+   *          repeated Bar results = 1;
+   *          PageResponse page = 2;
+   *  }
+   */
+  pagination?: V1Beta1PageResponse;
+}
+
 export interface CheckersQueryAllStoredGameResponse {
   storedGame?: CheckerscheckersStoredGame[];
 
@@ -35,6 +50,10 @@ export interface CheckersQueryAllStoredGameResponse {
    *  }
    */
   pagination?: V1Beta1PageResponse;
+}
+
+export interface CheckersQueryGetPlayerInfoResponse {
+  playerInfo?: CheckerscheckersPlayerInfo;
 }
 
 export interface CheckersQueryGetStoredGameResponse {
@@ -57,6 +76,19 @@ export interface CheckersQueryParamsResponse {
  * Params defines the parameters for the module.
  */
 export type CheckerscheckersParams = object;
+
+export interface CheckerscheckersPlayerInfo {
+  index?: string;
+
+  /** @format uint64 */
+  wonCount?: string;
+
+  /** @format uint64 */
+  lostCount?: string;
+
+  /** @format uint64 */
+  forfeitedCount?: string;
+}
 
 export interface CheckerscheckersStoredGame {
   index?: string;
@@ -373,6 +405,48 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
   queryParams = (params: RequestParams = {}) =>
     this.request<CheckersQueryParamsResponse, RpcStatus>({
       path: `/BenWolfaardt/checkers/checkers/params`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryPlayerInfoAll
+   * @summary Queries a list of PlayerInfo items.
+   * @request GET:/BenWolfaardt/checkers/checkers/player_info
+   */
+  queryPlayerInfoAll = (
+    query?: {
+      "pagination.key"?: string;
+      "pagination.offset"?: string;
+      "pagination.limit"?: string;
+      "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<CheckersQueryAllPlayerInfoResponse, RpcStatus>({
+      path: `/BenWolfaardt/checkers/checkers/player_info`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryPlayerInfo
+   * @summary Queries a PlayerInfo by index.
+   * @request GET:/BenWolfaardt/checkers/checkers/player_info/{index}
+   */
+  queryPlayerInfo = (index: string, params: RequestParams = {}) =>
+    this.request<CheckersQueryGetPlayerInfoResponse, RpcStatus>({
+      path: `/BenWolfaardt/checkers/checkers/player_info/${index}`,
       method: "GET",
       format: "json",
       ...params,
