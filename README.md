@@ -2172,11 +2172,142 @@ docker exec -it \
 #     wonCount: "1"
 ```
 
+#### Migrate the Leaderboard Module After Production
+
+- You introduced a new expected keeper. If you want to unit test your migration helpers properly, you have to mock this new expected interface. Update the `Makefile` and then
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    make mock-expected-keepers
+```
+
+- Write your tests and then test them
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test github.com/BenWolfaardt/checkers/x/leaderboard/migrations/cv2/keeper
+```
+
 - 
 
 ```bash
 
 ```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
+- 
+
+```bash
+
+```
+
 
 ## Notes
 
