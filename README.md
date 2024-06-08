@@ -1670,66 +1670,48 @@ docker compose \
     --detach
 ```
 
-- 
+- Now you can connect to `node-carol` to start interacting with the blockchain as you would a normal node. For instance, to ask a simple status.
 
 ```bash
+docker run --rm -it \
+    --network checkers-prod_net-public \
+    checkersd_i status \
+    --node "tcp://node-carol:26657"
 ```
 
-- 
+> Whenever you submit a transaction to `node-carol`, it will be propagated to the sentries and onward to the validators.
+
+- Get your prod setup's respective addresses for Alice and Bob
 
 ```bash
+alice=$(echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-alice:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    show alice --address)
+    # cosmos1rcqaz0qcm73lt4raet3u56avulzlv68uqxv0wy
+bob=$(echo password | docker run --rm -i \
+    -v $(pwd)/prod-sim/desk-bob:/root/.checkers \
+    checkersd_i \
+    keys \
+    --keyring-backend file --keyring-dir /root/.checkers/keys \
+    show bob --address)
+    # cosmos1hqca6pqtqcvk7razsydx9xugjc22706r7qkyfz
 ```
 
-- 
+- To stop your whole setup, run
 
 ```bash
+docker compose --project-name checkers-prod down
 ```
 
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
+> Finished up until `Self-contained checkers blockchain` in this section.
 
 - 
 
 ```bash
 ```
-
-- 
-
-```bash
-```
-
-- 
-
-```bash
-```
-
 
 ## Notes
 
