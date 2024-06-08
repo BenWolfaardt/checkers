@@ -8,4 +8,5 @@ release/
 build/
 prod-sim/*/config/addrbook.json
 prod-sim/*/data/*
+# Note how priv_validator_state.json is necessary if you want to try again on another host, otherwise, it would be ignored by Git.
 !prod-sim/*/data/priv_validator_state.json
