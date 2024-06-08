@@ -2084,12 +2084,99 @@ $ docker rm checkers
 $ docker network rm checkers-net
 ```
 
+#### Add a Leaderboard Module
+
+- Do so with ignite
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold module leaderboard \
+    --params length:uint
+```
+
+- Add a structure for the leaderboard: you want a single stored leaderboard for the whole module
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    ignite scaffold single leaderboard winners \
+    --module leaderboard --no-message
+```
+
+- Update the various `.proto` files and then run
+
+```bash
+docker exec -it checkers \
+    ignite generate proto-go
+```
+
+- Confirm all of your tests are passing
+
+```bash
+docker exec -it checkers \
+    go test github.com/BenWolfaardt/checkers/x/leaderboard/keeper
+docker exec -it checkers \
+    go test github.com/BenWolfaardt/checkers/x/leaderboard/types
+```
+
+- After adding `Candidate` to `leaderboard.proto` run
+
+```bash
+docker exec -it checkers \
+    ignite generate proto-go
+```
+
+- Create new mocks to test the `MultiHook` type we added
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    make mock-expected-keepers
+```
+
+> Re run your tests
+
+- Your v2 blockchain is fully functioning. It will work as long as you start it from scratch
+
+```bash
+docker network create checkers-net
+docker run --rm -it \
+    -v $(pwd):/checkers -w /checkers \
+    -p 4500:4500 -p 26657:26657 \
+    --network checkers-net \
+    --name checkers \
+    checkers_i \
+    ignite chain serve --reset-once
+```
+
+<!-- TODO: require the CosmJS integrations tests here which section was skipped -->
+
+- After that, you can query your leaderboard
+
+```bash
+docker exec -it \
+    checkers \
+    checkersd query leaderboard show-leaderboard
+
+# Leaderboard:
+#   winners:
+#   - addedAt: "1682373982"
+#     address: cosmos1fx6qlxwteeqxgxwsw83wkf4s9fcnnwk8z86sql
+#     wonCount: "1"
+```
+
 - 
 
 ```bash
 
 ```
-
 
 ## Notes
 
