@@ -8,6 +8,8 @@ services:
       - ./kms-alice:/root/tmkms
     networks:
       - net-alice-kms
+    environment:
+      - RUST_BACKTRACE=1
 
   val-alice:
     command: start
