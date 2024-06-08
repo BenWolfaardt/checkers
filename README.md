@@ -1722,16 +1722,21 @@ docker run --rm -it \
     --module checkers --no-message
 ```
 
-- 
+- You can run the tests with the verbose `-v` flag to get the log:
 
 ```bash
-
+docker run --rm -it \
+    -v $(pwd):/checkers \
+    -w /checkers \
+    checkers_i \
+    go test -v github.com/alice/checkers/x/checkers/migrations/cv3/keeper
 ```
 
-- 
+- After updating tests, test them
 
 ```bash
-
+go test -v github.com/BenWolfaardt/checkers/x/checkers/migrations/cv3/keeper
+go test -v github.com/BenWolfaardt/checkers/tests/integration/checkers/migrations/cv3
 ```
 
 - 
