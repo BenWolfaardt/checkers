@@ -18,6 +18,7 @@
 		}
 	},
 	"features": {
+		"docker-from-docker": "20.10",
 		"ghcr.io/devcontainers/features/git": {
 			"version": "latest"
 		}
